@@ -1,0 +1,65 @@
+{
+	"name": "lceda-sch-conn-export",
+	"uuid": "8016351db56413b1178ec9d390596a75",
+	"displayName": "原理图连接信息导出",
+	"description": "把整份原理图的网络连接导出为 Markdown，供大模型（LLM）开发固件时查阅电路：以选中的 MCU/FPGA/DSP 等核心器件为中心输出引脚号、引脚名与互联关系，电源地等网络可配置忽略；结果在窗口中一键复制或下载 .md。全程不联网、不读写本地文件，无需外部交互权限。",
+	"version": "0.5.1",
+	"publisher": "liuem",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/liuem/LCEDA-sch-conn-export"
+	},
+	"engines": {
+		"eda": "^3.2.0"
+	},
+	"license": "Apache-2.0",
+	"categories": "Schematic",
+	"keywords": [
+		"Netlist",
+		"Export",
+		"Markdown",
+		"MCU",
+		"FPGA",
+		"LLM",
+		"Schematic"
+	],
+	"images": {
+		"logo": "./images/logo.png",
+		"banner": "./images/banner.jpg"
+	},
+	"activationEvents": {},
+	"entry": "./dist/index",
+	"dependentExtensions": {},
+	"headerMenus": {
+		"home": [],
+		"sch": [
+			{
+				"id": "sch-connexport-menu",
+				"title": "连接信息导出",
+				"menuItems": [
+					{
+						"id": "sce-run",
+						"title": "导出连接信息（预览 / 复制 / 下载）",
+						"registerFn": "runExport"
+					},
+					{
+						"id": "sce-selection",
+						"title": "导出选中器件互联（模块视图）",
+						"registerFn": "runSelectionExport"
+					},
+					{
+						"id": "sce-settings",
+						"title": "设置面板...",
+						"registerFn": "openSettingsPanel"
+					},
+					{
+						"id": "sce-about",
+						"title": "关于",
+						"registerFn": "about"
+					}
+				]
+			}
+		],
+		"pcb": []
+	}
+}

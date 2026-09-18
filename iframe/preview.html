@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>连接信息导出 · 预览 / 复制 / 下载</title>
+<style>
+	:root { --bg:#1e222a; --panel:#262b36; --border:#3a4150; --text:#dfe4ec; --dim:#8b93a5; --accent:#4f8ef7; --ok:#3fb96f; --err:#e05c5c; }
+	* { box-sizing:border-box; }
+	html,body { margin:0; height:100%; background:var(--bg); color:var(--text);
+		font:13px/1.5 system-ui,"Segoe UI","Microsoft YaHei",sans-serif; }
+	.wrap { padding:10px 12px 56px; height:100%; display:flex; flex-direction:column; gap:8px; }
+	#banner { font-size:12px; padding:6px 10px; border-radius:6px; display:none; }
+	#banner.warn { display:block; background:rgba(224,180,60,.12); color:#e0b43c; }
+	#banner.err { display:block; background:rgba(224,92,92,.12); color:var(--err); }
+	#meta { font-size:12px; color:var(--dim); }
+	pre#md { flex:1; margin:0; padding:10px; overflow:auto; white-space:pre-wrap; word-break:break-word;
+		background:var(--panel); border:1px solid var(--border); border-radius:6px;
+		font:12px/1.55 Consolas,Menlo,monospace; user-select:text; }
+	#bar { position:fixed; bottom:0; left:0; right:0; display:flex; gap:8px; padding:10px 16px;
+		background:var(--panel); border-top:1px solid var(--border); }
+	#bar button { flex:1; padding:8px; border:1px solid var(--border); border-radius:6px; background:#303748; color:var(--text); cursor:pointer; }
+	#bar button:disabled { opacity:.45; cursor:not-allowed; }
+	#bar button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+	#toast { position:fixed; top:10px; left:50%; transform:translateX(-50%); padding:6px 16px; border-radius:14px;
+		background:var(--accent); color:#fff; font-size:12px; opacity:0; transition:.3s; pointer-events:none; }
+	#toast.show { opacity:1; }
+	#toast.ok { background:var(--ok); }
+	#toast.err { background:var(--err); }
+</style>
+</head>
+<body>
+<div class="wrap">
+	<div id="banner"></div>
+	<div id="meta">读取上次生成的内容…</div>
+	<pre id="md">（空）</pre>
+</div>
+
+<div id="bar">
+	<button id="btnSelectAll">全选文本</button>
+	<button id="btnDownload">下载 .md</button>
+	<button id="btnCopy" class="primary">复制全文（给大模型粘贴用）</button>
+</div>
+<div id="toast"></div>
+
+<script>
+(function () {
+	'use strict';
+	var LAST_KEY = 'schConnExportLast';
+	var el = function (id) { return document.getElementById(id); };
+	var md = '';
+	var truncated = false;
+	var fileName = '';
+
+	function toast(text, cls) {
+		var t = el('toast');
+		t.textContent = text;
+		t.className = 'show ' + (cls || '');
+		setTimeout(function () { t.className = ''; }, 2600);
+	}
+
+	function fail(msg) {
+		el('banner').textContent = msg;
+		el('banner').className = 'err';
+		el('meta').textContent = '无法读取内容';
+		el('btnCopy').disabled = true;
+		el('btnDownload').disabled = true;
+		el('btnSelectAll').disabled = true;
+	}
+
+	function fmtTime(ts) {
+		if (!ts)
+			return '';
+		var d = new Date(ts);
+		var p = function (n) { return n < 10 ? '0' + n : '' + n; };
+		return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+	}
+
+	try {
+		if (typeof eda === 'undefined' || !eda || !eda.sys_Storage) {
+			fail('当前客户端的 iframe 未注入 eda.sys_Storage。请重新运行「导出连接信息」；全文也已输出到控制台（开发者工具 Console 过滤 sch-connexport）。');
+		}
+		else {
+			var raw = eda.sys_Storage.getExtensionUserConfig(LAST_KEY);
+			var parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+			if (parsed && typeof parsed.markdown === 'string') {
+				md = parsed.markdown;
+				truncated = parsed.truncated === true;
+				fileName = typeof parsed.fileName === 'string' && parsed.fileName ? parsed.fileName : 'schematic-connections.md';
+				el('md').textContent = md;
+				el('meta').textContent = (truncated ? '⚠ 内容超长已截断显示 · ' : '') + md.length + ' 字符 · 生成于 ' + (fmtTime(parsed.ts) || '刚刚');
+				if (truncated) {
+					el('banner').textContent = '内容超长已截断（窗口缓存上限），下载已禁用——请用「全选文本」+ Ctrl+C 复制，完整全文在控制台。';
+					el('banner').className = 'warn';
+					el('btnDownload').disabled = true;
+				}
+			}
+			else {
+				fail('没有已生成的内容——请先运行「导出连接信息」。');
+			}
+		}
+	}
+	catch (e) {
+		fail('读取失败：' + e);
+	}
+
+	el('btnSelectAll').onclick = function () {
+		var r = document.createRange();
+		r.selectNodeContents(el('md'));
+		var s = window.getSelection();
+		s.removeAllRanges();
+		s.addRange(r);
+	};
+
+	function copyFallback() {
+		var ta = document.createElement('textarea');
+		ta.value = md;
+		ta.style.position = 'fixed';
+		ta.style.opacity = '0';
+		document.body.appendChild(ta);
+		ta.select();
+		var ok = false;
+		try { ok = document.execCommand('copy'); }
+		catch (e) { /* ignore */ }
+		document.body.removeChild(ta);
+		return ok;
+	}
+
+	el('btnCopy').onclick = function () {
+		if (!md)
+			return;
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(md).then(
+				function () { toast('✓ 已复制全文' + (truncated ? '（截断版）' : '') + '，可直接粘贴给大模型', 'ok'); },
+				function () {
+					var ok = copyFallback();
+					toast(ok ? '✓ 已复制全文' : '复制失败，请用「全选文本」+ Ctrl+C', ok ? 'ok' : 'err');
+				},
+			);
+		}
+		else {
+			var ok2 = copyFallback();
+			toast(ok2 ? '✓ 已复制全文' : '复制失败，请用「全选文本」+ Ctrl+C', ok2 ? 'ok' : 'err');
+		}
+	};
+
+	// 浏览器下载（blob + a[download]）：不经过 EDA 文件系统接口，无需"外部交互"权限；
+	// 客户端 webview 若禁用下载则提示改用复制
+	el('btnDownload').onclick = function () {
+		if (!md || truncated)
+			return;
+		try {
+			var blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+			var a = document.createElement('a');
+			a.href = URL.createObjectURL(blob);
+			a.download = fileName;
+			document.body.appendChild(a);
+			a.click();
+			setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+			toast('已触发下载 ' + fileName + '（若未出现保存框，请改用「复制全文」）', 'ok');
+		}
+		catch (e) {
+			toast('下载不可用：' + e + '，请用「复制全文」', 'err');
+		}
+	};
+})();
+</script>
+</body>
+</html>
