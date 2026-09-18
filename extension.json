@@ -3,7 +3,7 @@
 	"uuid": "8016351db56413b1178ec9d390596a75",
 	"displayName": "原理图连接信息导出",
 	"description": "把整份原理图的网络连接导出为 Markdown，供大模型（LLM）开发固件时查阅电路：以选中的 MCU/FPGA/DSP 等核心器件为中心输出引脚号、引脚名与互联关系，电源地等网络可配置忽略；结果在窗口中一键复制或下载 .md。全程不联网、不读写本地文件，无需外部交互权限。",
-	"version": "0.5.1",
+	"version": "0.5.2",
 	"publisher": "liuem",
 	"repository": {
 		"type": "git",

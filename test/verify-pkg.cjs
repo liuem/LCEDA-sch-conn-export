@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const process = require('node:process');
 const JSZip = require('jszip');
 
-const pkg = process.argv[2] || 'build/dist/lceda-sch-conn-export_v0.5.1.eext';
+const pkg = process.argv[2] || 'build/dist/lceda-sch-conn-export_v0.5.2.eext';
 JSZip.loadAsync(fs.readFileSync(pkg)).then(async (z) => {
 	const names = Object.keys(z.files).filter(n => !z.files[n].dir);
 	console.log('包内文件:');
@@ -41,6 +41,17 @@ JSZip.loadAsync(fs.readFileSync(pkg)).then(async (z) => {
 	const prev = await z.file('iframe/preview.html').async('string');
 	for (const k of ['schConnExportLast', 'btnCopy', 'btnSelectAll', 'btnDownload', 'clipboard'])
 		console.log(`  预览含 ${k}:`, prev.includes(k));
+	// 商店上架要求：功能示意图随包，README 引用（.edaignore 未排除 images/）
+	for (const img of ['images/demo-menu.png', 'images/demo-export-full.png', 'images/demo-export-module.png', 'images/demo-settings-1.png', 'images/demo-settings-2.png']) {
+		if (!names.includes(img))
+			throw new Error(`包缺少示意图 ${img}（商店说明页要求）`);
+	}
+	const readme = await z.file('README.md').async('string');
+	for (const img of ['demo-menu.png', 'demo-export-full.png', 'demo-export-module.png', 'demo-settings-1.png', 'demo-settings-2.png']) {
+		if (!readme.includes(img))
+			throw new Error(`README 未引用示意图 ${img}`);
+	}
+	console.log('  示意图 5 张随包且 README 已引用: true');
 	// 回归守卫：不引用文件系统/联网接口（静态扫描会触发"外部交互权限"安装提示）
 	for (const banned of ['sys_FileSystem', 'saveFileToFileSystem', 'readFileFromFileSystem', 'WebSocket', 'XMLHttpRequest', 'sendBeacon', 'fetch(']) {
 		if (src.includes(banned))

@@ -1,7 +1,7 @@
 {
 	"name": "lceda-sch-conn-export",
 	"type": "module",
-	"version": "0.5.1",
+	"version": "0.5.2",
 	"description": "LCEDA Pro extension: export schematic net connections to markdown for LLM context",
 	"license": "Apache-2.0",
 	"engines": {
