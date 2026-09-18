@@ -7,6 +7,7 @@
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
 		"resolveJsonModule": true,
+		"allowImportingTsExtensions": true,
 		"allowJs": true,
 		"strict": true,
 		"strictBindCallApply": true,
@@ -17,14 +18,13 @@
 		"noImplicitAny": true,
 		"noImplicitThis": true,
 		"useUnknownInCatchVariables": true,
+		"noEmit": true,
 		"outDir": "./dist/",
 		"sourceMap": false,
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
-		"isolatedModules": true,
-		"allowImportingTsExtensions": true,
-		"noEmit": true
+		"isolatedModules": true
 	},
 	"include": ["./src/**/*", "./node_modules/@jlceda/pro-api-types/**/*"]
 }
